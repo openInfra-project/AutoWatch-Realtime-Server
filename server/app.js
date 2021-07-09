@@ -1,51 +1,75 @@
-var os = require('os');
-var nodeStatic = require('node-static');
-var http = require('http');
-var socketIO = require('socket.io');
-
-var fileServer = new(nodeStatic.Server)();
-var app = http.createServer(function(req, res) {
-  fileServer.serve(req, res);
-}).listen(8080);
-var io = socketIO.listen(app);
-io.sockets.on('connection', function(socket) {
-
-  // convenience function to log server messages on the client
-  function log() {
-    var array = ['Message from server:'];
-    array.push.apply(array, arguments);
-    socket.emit('log', array);
+const app = require("express")();
+const https = require('https')
+const fs = require('fs');
+const { connect } = require("http2");
+const options = {
+    key: fs.readFileSync('./private.pem'),
+    cert: fs.readFileSync('./public.pem')
+}
+const httpsServer = https.createServer(options,app)
+const io = require('socket.io')(httpsServer,{
+  cors:{
+    origin:"*",
+    credential:true
   }
+})
+// io.sockets.on('connection', (socket) => {
+//   socket.on('disconnect', () => {
+//     console.log('disconnected');
+//   });
+// });
+var room_info = ""
+io.sockets.on('connection',(socket)=> {
+  socket.on('request',(room)=> {
+    socket.broadcast.emit("getRequest",room)
+    room_info =  room
+  })
+  socket.on('response',(room,isGrant)=> {
+    if(isGrant){
+      socket.broadcast.emit('getResponse',room.isGrant)
+      socket.emit('enter',room)
+    }
+  })
+  socket.on('onCollabo',(id)=> {
+    socket.emit('collabo',room_info)
+  })
+  socket.on('enter',(room,id)=> {
+    socket.emit('collabo',room)
+    console.log('enter'+room)
+  })
+  socket.on('collabo',(room)=> {
+    socket.emit('create or join',room)
+    console.log('Attempted to create or join room',room)
+  })
+  socket.on('connect',()=> {
+    socket.emit("onCollabo",socket.id)
+  })
 
-  socket.on('message', function(message) {
-    log('Client said: ', message);
-    // for a real app, would be room-only (not broadcast)
-    socket.broadcast.emit('message', message);
-  });
 
-  socket.on('create or join', function(room) {
-    log('Received request to create or join room ' + room);
 
-    var clientsInRoom = io.sockets.adapter.rooms[room];
-    var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
-    log('Room ' + room + ' now has ' + numClients + ' client(s)');
-
-    if (numClients === 0) {
-      socket.join(room);
-      log('Client ID ' + socket.id + ' created room ' + room);
+  socket.on('message',(message)=> {
+    console.log("Client said: ",message)
+    socket.broadcast.emit('message',message)
+  })
+  socket.on('create or join' , (room)=> {
+    console.log("Received request to create or join room" + room)
+    var clientsInRoom = io.sockets.adapter.rooms[room]
+    var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length:0
+    console.log('Room '+room+' now has' + numClients + ' clinet(s)')
+    if(numClients===0) {
+      socket.join(room)
+      console.log('Client ID ' + socket.id + ' created room ' + room);
       socket.emit('created', room, socket.id);
-
-    } else if (numClients === 1) {
-      log('Client ID ' + socket.id + ' joined room ' + room);
+    }else if(numClients===1) {
+      console.log('Client ID ' + socket.id + ' joined room ' + room);
       io.sockets.in(room).emit('join', room);
       socket.join(room);
       socket.emit('joined', room, socket.id);
       io.sockets.in(room).emit('ready');
-    } else { // max two clients
-      socket.emit('full', room);
+    }else { // max two clients
+      socket.emit('full',room)
     }
-  });
-
+  })
   socket.on('ipaddr', function() {
     var ifaces = os.networkInterfaces();
     for (var dev in ifaces) {
@@ -56,5 +80,15 @@ io.sockets.on('connection', function(socket) {
       });
     }
   });
+})
 
+
+
+
+
+
+
+
+httpsServer.listen(4000, () => {
+  console.log('HTTPS Server is running at 4000!');
 });
