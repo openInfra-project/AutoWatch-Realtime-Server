@@ -20,6 +20,7 @@ const io = require('socket.io')(httpsServer,{
 // });
 var room_info = ""
 io.sockets.on('connection',(socket)=> {
+  //request랑 response 아직 구현 안해씀
   socket.on('request',(room)=> {
     socket.broadcast.emit("getRequest",room)
     room_info =  room
