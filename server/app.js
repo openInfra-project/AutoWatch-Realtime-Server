@@ -1,13 +1,20 @@
 const app = require("express")();
+//테스트용 https서버
+//실제로 배포시 https로 배포해야한다.
 const https = require('https')
+
+//테스트용 http
+const http = require('http')
+
 const fs = require('fs');
 const { connect } = require("http2");
 const options = {
     key: fs.readFileSync('./private.pem'),
     cert: fs.readFileSync('./public.pem')
 }
-const httpsServer = https.createServer(options,app)
-const io = require('socket.io')(httpsServer,{
+// const httpsServer = https.createServer(options,app)
+const httpServer = http.createServer(options,app)
+const io = require('socket.io')(httpServer,{
   cors:{
     origin:"*",
     credential:true
@@ -31,45 +38,55 @@ io.sockets.on('connection',(socket)=> {
       socket.emit('enter',room)
     }
   })
-  socket.on('onCollabo',(id)=> {
-    socket.emit('collabo',room_info)
-  })
-  socket.on('enter',(room,id)=> {
-    socket.emit('collabo',room)
-    console.log('enter'+room)
+  //-------------------------------------------
+  socket.on('connect',()=> {
+    socket.emit("onCollabo",socket.id)
   })
   socket.on('collabo',(room)=> {
     socket.emit('create or join',room)
     console.log('Attempted to create or join room',room)
   })
-  socket.on('connect',()=> {
-    socket.emit("onCollabo",socket.id)
-  })
-
-
-
   socket.on('message',(message)=> {
     console.log("Client said: ",message)
     socket.broadcast.emit('message',message)
   })
+  var numClients = {}
   socket.on('create or join' , (room)=> {
-    console.log("Received request to create or join room" + room)
-    var clientsInRoom = io.sockets.adapter.rooms[room]
-    var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length:0
-    console.log('Room '+room+' now has' + numClients + ' clinet(s)')
-    if(numClients===0) {
-      socket.join(room)
+    // console.log("Received request to create or join room " + room)
+    // var clientsInRoom = io.sockets.adapter.rooms[room]
+    // console.log("room name:"+room)
+    // console.log("TestRESULT"+io.sockets.adapter.rooms[room])
+    // console.log("TEST RESULT :"+io.sockets.adapter.rooms)
+    // var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length:0
+    // console.log('Room '+room+' now has' + numClients + ' clinet(s)')
+    socket.join(room)
+    socket.room = room
+    if(numClients[room]==undefined) {
+      numClients[room] = 1
+      console.log("client number:"+numClients[room])
       console.log('Client ID ' + socket.id + ' created room ' + room);
-      socket.emit('created', room, socket.id);
-    }else if(numClients===1) {
-      console.log('Client ID ' + socket.id + ' joined room ' + room);
-      io.sockets.in(room).emit('join', room);
-      socket.join(room);
+      socket.emit('created',room,socket.id)
+    }else {
+      numClients[room]++;
+      console.log("client number:"+numClients[room])
+      console.log('Client ID ' + socket.id + ' created room ' + room);
+      io.sockets.in(room).emit('join',room)
       socket.emit('joined', room, socket.id);
-      io.sockets.in(room).emit('ready');
-    }else { // max two clients
-      socket.emit('full',room)
     }
+    // if(numClients===0) {
+    //   socket.join(room)
+    //   console.log("TestRESULT2"+io.sockets.adapter.rooms[room])
+    //   console.log('Client ID ' + socket.id + ' created room ' + room);
+    //   socket.emit('created', room, socket.id);
+    // }else if(numClients===1) {
+    //   console.log('Client ID ' + socket.id + ' joined room ' + room);
+    //   io.sockets.in(room).emit('join', room);
+    //   socket.join(room);
+    //   socket.emit('joined', room, socket.id);
+    //   io.sockets.in(room).emit('ready');
+    // }else { // max two clients
+    //   socket.emit('full',room)
+    // }
   })
   socket.on('ipaddr', function() {
     var ifaces = os.networkInterfaces();
@@ -90,6 +107,6 @@ io.sockets.on('connection',(socket)=> {
 
 
 
-httpsServer.listen(4000, () => {
+httpServer.listen(4000, () => {
   console.log('HTTPS Server is running at 4000!');
 });
