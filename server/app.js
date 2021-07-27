@@ -12,9 +12,9 @@ const options = {
     key: fs.readFileSync('./private.pem'),
     cert: fs.readFileSync('./public.pem')
 }
-// const httpsServer = https.createServer(options,app)
-const httpServer = http.createServer(options,app)
-const io = require('socket.io')(httpServer,{
+const httpsServer = https.createServer(options,app)
+// const httpServer = http.createServer(options,app)
+const io = require('socket.io')(httpsServer,{
   cors:{
     origin:"*",
     credential:true
@@ -271,6 +271,6 @@ io.sockets.on('connection',(socket)=> {
 
 
 
-httpServer.listen(4000, () => {
+httpsServer.listen(4000, () => {
   console.log('HTTPS Server is running at 4000!');
 });
