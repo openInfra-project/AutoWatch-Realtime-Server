@@ -21,158 +21,7 @@ const io = require('socket.io')(httpsServer,{
   }
 })
 
-// io.sockets.on('connection', function(socket) {
 
-//   // convenience function to log server messages on the client
-//   function log() {
-//     var array = ['Message from server:'];
-//     array.push.apply(array, arguments);
-//     socket.emit('log', array);
-//   }
-
-//   socket.on('message', function(message) {
-//     console.log('Client said: ', message);
-//     // for a real app, would be room-only (not broadcast)
-//     socket.broadcast.emit('message', message);
-//   });
-
-//   socket.on('create or join', function(room) {
-//     console.log('Received request to create or join room ' + room);
-
-//     var clientsInRoom = io.sockets.adapter.rooms[room];
-//     // var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
-//     var numClients = io.engine.clientsCount;
-//     console.log('Room ' + room + ' now has ' + numClients + ' client(s)');
-    
-
-//     if (numClients === 0) {
-//       socket.join(room);
-//       console. log('Client ID ' + socket.id + ' created room ' + room);
-//       socket.emit('created', room, socket.id);
-
-//     } else if (numClients === 1) {
-//       console.log('Client ID ' + socket.id + ' joined room ' + room);
-//       io.sockets.in(room).emit('join', room);
-//       socket.join(room);
-//       socket.emit('joined', room, socket.id);
-//       io.sockets.in(room).emit('ready');
-//     } else { // max two clients
-//       socket.emit('full', room);
-//     }
-//   });
-
-//   socket.on('ipaddr', function() {
-//     var ifaces = os.networkInterfaces();
-//     for (var dev in ifaces) {
-//       ifaces[dev].forEach(function(details) {
-//         if (details.family === 'IPv4' && details.address !== '127.0.0.1') {
-//           socket.emit('ipaddr', details.address);
-//         }
-//       });
-//     }
-//   });
-
-//   socket.on('bye', function(){
-//     console.log('received bye');
-//   });
-
-// });
-// // io.sockets.on('connection', (socket) => {
-//   socket.on('disconnect', () => {
-//     console.log('disconnected');
-//   });
-// });
-// var room_info = ""
-// io.sockets.on('connection',(socket)=> {
-//   //request랑 response 아직 구현 안해씀
-//   socket.on('request',(room)=> {
-//     socket.broadcast.emit("getRequest",room)
-//     room_info =  room
-//   })
-//   socket.on('response',(room,isGrant)=> {
-//     if(isGrant){
-//       socket.broadcast.emit('getResponse',room.isGrant)
-//       socket.emit('enter',room)
-//     }
-//   })
-//   //-------------------------------------------
-//   socket.on('connect',()=> {
-//     socket.emit("onCollabo",socket.id)
-//   })
-//   socket.on('onCollabo',(id)=> {
-//     socket.emit("collabo",room_info)
-//   })
-//   socket.on('collabo',(room)=> {
-//     socket.emit('create or join',room)
-//     console.log('Attempted to create or join room',room)
-//   })
-//   socket.on('message',(message)=> {
-//     console.log("Client said: ",message)
-//     socket.broadcast.emit('message',message)
-//   })
-//   var roominfo = [{
-//     name:'',
-//     count:0,
-//   }]
-  
-//   socket.on('create or join' , (room)=> {
-//     // console.log("Received request to create or join room " + room)
-//     // var clientsInRoom = io.sockets.adapter.rooms[room]
-//     // console.log("room name:"+room)
-//     // console.log("TestRESULT"+io.sockets.adapter.rooms[room])
-//     // console.log("TEST RESULT :"+io.sockets.adapter.rooms)
-//     // var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length:0
-//     // console.log('Room '+room+' now has' + numClients + ' clinet(s)')
-//     roominfo.push({name:room})
-//     socket.join(room)
-//     socket.room = room
-//     var index=0
-//     for(i=0; i<roominfo.length; i++){
-//       if(roominfo[i].name===room){
-//         index = i
-//         break;
-//       }
-//     }
-//     console.log("client 수 :" + roominfo[index].count);
-//     if(roominfo[index].count===0) {
-//       roominfo[index].count++
-
-//       console.log("client number:"+roominfo[index].count)
-//       console.log('Client ID ' + socket.id + ' created room ' + room);
-//       socket.emit('created',room,socket.id)
-//     }else {
-//       roominfo[index].count++
-//       console.log("client number:"+roominfo[index].count)
-//       console.log('Client ID ' + socket.id + ' joined room ' + room);
-//       io.sockets.in(room).emit('join',room)
-//       socket.emit('joined', room, socket.id);
-//     }
-    // if(numClients===0) {
-    //   socket.join(room)
-    //   console.log("TestRESULT2"+io.sockets.adapter.rooms[room])
-    //   console.log('Client ID ' + socket.id + ' created room ' + room);
-    //   socket.emit('created', room, socket.id);
-    // }else if(numClients===1) {
-    //   console.log('Client ID ' + socket.id + ' joined room ' + room);
-    //   io.sockets.in(room).emit('join', room);
-    //   socket.join(room);
-    //   socket.emit('joined', room, socket.id);
-    //   io.sockets.in(room).emit('ready');
-    // }else { // max two clients
-    //   socket.emit('full',room)
-    // }
-//   })
-//   socket.on('ipaddr', function() {
-//     var ifaces = os.networkInterfaces();
-//     for (var dev in ifaces) {
-//       ifaces[dev].forEach(function(details) {
-//         if (details.family === 'IPv4' && details.address !== '127.0.0.1') {
-//           socket.emit('ipaddr', details.address);
-//         }
-//       });
-//     }
-//   });
-// })
 let users = {}
 let socketToRoom = {}
 //방 입장인원 maximum 변수
@@ -182,7 +31,7 @@ const rooomOption = ""
 //study 모드의 경우 maximum을 4~8 명으로 정하고(유료화를 위해)
 //test 모드의 경우 maximum은 찾아보기
 
-
+var test_int=0;
 io.sockets.on('connection',(socket)=> {
   console.log('it work?')
   socket.on('user_update',(data)=> {
@@ -207,12 +56,23 @@ io.sockets.on('connection',(socket)=> {
         
       }else {
         //방에 입장
-        users[data.room].push({id:socket.id,email:data.email})
+        users[data.room].push({
+          id:socket.id,
+          email:data.email,
+          nickname:data.nickname,
+          roomtype:data.roomtype
+        
+        })
       }
      
 
     }else { //방에 인원이 1명도 없으면 방을 생성해준다.
-      users[data.room] = [{id:socket.id,email:data.email}]
+      users[data.room] = [{
+        id:socket.id,
+        email:data.email,
+        nickname:data.nickname,
+        roomtype:data.roomtype
+      }]
     }
     socketToRoom[socket.id] = data.room
     socket.join(data.room)
@@ -233,7 +93,8 @@ io.sockets.on('connection',(socket)=> {
     let sdp = data.sdp
     let offerSendId = data.offerSendId
     let offerSendEmail = data.offerSendEmail
-    socket.to(data.offerReciveID).emit('getOffer',{sdp,offerSendId,offerSendEmail,})
+    let offerSendnickname = data.offerSendNickname
+    socket.to(data.offerReciveID).emit('getOffer',{sdp,offerSendId,offerSendEmail,offerSendnickname})
   })
   socket.on('answer',data=> {
     let sdp = data.sdp
@@ -261,6 +122,15 @@ io.sockets.on('connection',(socket)=> {
     console.log(roomID)
     socket.to(roomID).emit('user_exit', {id: socket.id});
     console.log(users);
+  })
+  // -------------------------------------채팅관련 --------------------------
+  socket.on("message",data=> {
+    console.log("----------------------채팅-----------------")
+    console.log('name:'+data.nickname+'message:'+data.chatdata)
+    console.log("----------------------채팅-----------------")
+    test_int = test_int+1;
+    console.log("test : "+test_int)
+    io.to(socketToRoom[socket.id]).emit('message',data)
   })
 })
 
