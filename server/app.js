@@ -25,7 +25,7 @@ const io = require('socket.io')(httpsServer,{
 let users = {}
 let socketToRoom = {}
 //방 입장인원 maximum 변수
-const maximum = process.env.MAXIMUM ||4
+const maximum = process.env.MAXIMUM ||8
 //방이 시험모드인지 study모드인지 통신을 통해 들어옴
 const rooomOption = ""
 //study 모드의 경우 maximum을 4~8 명으로 정하고(유료화를 위해)
@@ -53,6 +53,10 @@ io.sockets.on('connection',(socket)=> {
       //방에 입장하기전에 중복체크
       if(users[data.room].filter(user=>user.id===socket.id).length>0){
         console.log("--------------Duplicate ID 입니다--------------")
+        users[data.room].filter(user=>user.id===socket.id)[0].audio = data.audio
+        users[data.room].filter(user=>user.id===socket.id)[0].video = data.video
+        console.log(users[data.room].filter(user=>user.id===socket.id))
+        
         
       }else {
         //방에 입장
@@ -60,7 +64,11 @@ io.sockets.on('connection',(socket)=> {
           id:socket.id,
           email:data.email,
           nickname:data.nickname,
-          roomtype:data.roomtype
+          roomtype:data.roomtype,
+          roomowner:data.roomowner,
+          audio: data.audio,
+          video:data.video
+
         
         })
       }
@@ -71,7 +79,11 @@ io.sockets.on('connection',(socket)=> {
         id:socket.id,
         email:data.email,
         nickname:data.nickname,
-        roomtype:data.roomtype
+        roomtype:data.roomtype,
+        roomowner:data.roomowner,
+        audio: data.audio,
+        video:data.video
+
       }]
     }
     socketToRoom[socket.id] = data.room
@@ -87,14 +99,17 @@ io.sockets.on('connection',(socket)=> {
     const userInThisRoom = users[data.room].filter(user=>user.id!==socket.id)
     console.log("현재 들어온 사람을 뺸 나머지 사용자들:"+JSON.stringify(userInThisRoom))
     console.log("현재 들어온 사람 아이디 = socketid= "+socket.id)
-    io.sockets.to(socket.id).emit('all_users', userInThisRoom)
+    io.sockets.to(socket.id).emit('all_users', userInThisRoom,data.audio,data.video)
   })
   socket.on('offer',data=> {
     let sdp = data.sdp
     let offerSendId = data.offerSendId
     let offerSendEmail = data.offerSendEmail
     let offerSendnickname = data.offerSendNickname
-    socket.to(data.offerReciveID).emit('getOffer',{sdp,offerSendId,offerSendEmail,offerSendnickname})
+    let audio = data.audio
+    let video = data.video
+    //사용자 말고 방장Id도 emit해주도록 작성하기
+    socket.to(data.offerReciveID).emit('getOffer',{sdp,offerSendId,offerSendEmail,offerSendnickname,audio,video})
   })
   socket.on('answer',data=> {
     let sdp = data.sdp
@@ -111,16 +126,23 @@ io.sockets.on('connection',(socket)=> {
     console.log(`[${socketToRoom[socket.id]}]: ${socket.id} exit`);
     const roomID = socketToRoom[socket.id];
     let room = users[roomID];
+    let username = ""
+   
     if (room) {
+      username = room.find(user => {
+        if(user.id ===socket.id) return user.nickname
+      })
       room = room.filter(user => user.id !== socket.id);
+      
       users[roomID] = room;
       if (room.length === 0) {
           delete users[roomID];
           return;
       }
     }
+    console.log("test"+username)
     console.log(roomID)
-    socket.to(roomID).emit('user_exit', {id: socket.id});
+    socket.to(roomID).emit('user_exit', {id: socket.id,nickname:username.nickname});
     console.log(users);
   })
   // -------------------------------------채팅관련 --------------------------
@@ -130,7 +152,19 @@ io.sockets.on('connection',(socket)=> {
     console.log("----------------------채팅-----------------")
     test_int = test_int+1;
     console.log("test : "+test_int)
+    console.log("roomID:"+socketToRoom[socket.id])
     io.to(socketToRoom[socket.id]).emit('message',data)
+  })
+  //------------------------------------gaze알람 관련----------------------
+  socket.on("gazealert",(data)=> {
+    const roomID = socketToRoom[socket.id];
+    let room = users[roomID];
+    if(room) {
+      room = room.filter(user => user.email === user.roomowner);
+      io.to(room[0].id).emit('receiveGazeAlert',(data.nickname))
+      console.log(`send to ${room[0].id} = room owner`)
+    }
+
   })
 })
 
