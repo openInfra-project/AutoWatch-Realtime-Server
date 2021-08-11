@@ -96,10 +96,12 @@ io.sockets.on('connection',(socket)=> {
     const count2 = io.of("/").sockets.size;
     console.log("소켓 클라이언트 카운트"+count+"테스트2:"+count2)
     //나 자신의 id 뺴고 나머지를 출력하는거니까 local에선 공백이 맞음
+    const mydata = users[data.room].filter(user=>user.id===socket.id)
+    console.log("내 데이터 입니다"+mydata[0].audio)
     const userInThisRoom = users[data.room].filter(user=>user.id!==socket.id)
     console.log("현재 들어온 사람을 뺸 나머지 사용자들:"+JSON.stringify(userInThisRoom))
     console.log("현재 들어온 사람 아이디 = socketid= "+socket.id)
-    io.sockets.to(socket.id).emit('all_users', userInThisRoom,data.audio,data.video)
+    io.sockets.to(socket.id).emit('all_users', userInThisRoom,mydata[0])
   })
   socket.on('offer',data=> {
     let sdp = data.sdp
