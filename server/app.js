@@ -161,9 +161,12 @@ io.sockets.on('connection',(socket)=> {
   socket.on("gazealert",(data)=> {
     const roomID = socketToRoom[socket.id];
     let room = users[roomID];
+    let nickname = data.nickname
+    let email = data.email
+    let gazecount = data.gaze
     if(room) {
       room = room.filter(user => user.email === user.roomowner);
-      io.to(room[0].id).emit('receiveGazeAlert',(data.nickname))
+      io.to(room[0].id).emit('receiveGazeAlert',{nickname,email,gazecount})
       console.log(`send to ${room[0].id} = room owner`)
     }
 
