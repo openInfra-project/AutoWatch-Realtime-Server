@@ -110,8 +110,9 @@ io.sockets.on('connection',(socket)=> {
     let offerSendnickname = data.offerSendNickname
     let audio = data.audio
     let video = data.video
+    let offerroomowner = data.offerroomowner
     //사용자 말고 방장Id도 emit해주도록 작성하기
-    socket.to(data.offerReciveID).emit('getOffer',{sdp,offerSendId,offerSendEmail,offerSendnickname,audio,video})
+    socket.to(data.offerReciveID).emit('getOffer',{sdp,offerSendId,offerSendEmail,offerSendnickname,offerroomowner,audio,video})
   })
   socket.on('answer',data=> {
     let sdp = data.sdp
@@ -164,9 +165,10 @@ io.sockets.on('connection',(socket)=> {
     let nickname = data.nickname
     let email = data.email
     let gazecount = data.gaze
+    let boundcount = data.bound
     if(room) {
       room = room.filter(user => user.email === user.roomowner);
-      io.to(room[0].id).emit('receiveGazeAlert',{nickname,email,gazecount})
+      io.to(room[0].id).emit('receiveGazeAlert',{nickname,email,gazecount,boundcount})
       console.log(`send to ${room[0].id} = room owner`)
     }
 
