@@ -30,7 +30,7 @@ nodemon app.js
 1. WebRTC를 위한 Socket 통신 연결
 2. https 통신을 위한 SSL 
 
-? replicas 를 통한 분산처리?
+
 
 ### 🐹API
 
